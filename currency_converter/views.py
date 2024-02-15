@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from currency_converter.models import ConversionHistory
-from currency_converter.serializers import ConversionHistorySerializer
+from currency_converter.models import ConversionHistory, CurrencyConversion
+from currency_converter.serializers import ConversionHistorySerializer, CurrencyConversionSerializer
 from currency_converter.services.currency_converter import ConversionFileService, CurrencyConversionService
 
 
@@ -21,8 +21,7 @@ def convert(request, currency, amount):
         amount = float(amount)
     except ValueError:
         return Response({"error": "Invalid amount"}, status=400)
-    conversion_data = ConversionFileService.load_from_url('MDL', 'https://www.floatrates.com/daily/mdl.json')
-    converter = CurrencyConversionService(conversion_data)
+    converter = CurrencyConversionService()
     try:
         amount_in_eur = converter.convert("MDL", currency, amount)
         ConversionHistory.objects.create(
@@ -41,8 +40,7 @@ def convert_post(request):
         amount = float(request.data['amount'])
     except ValueError:
         return Response({"error": "Invalid amount"}, status=400)
-    conversion_data = ConversionFileService.load_from_url('MDL', 'https://www.floatrates.com/daily/mdl.json')
-    converter = CurrencyConversionService(conversion_data)
+    converter = CurrencyConversionService()
     try:
         amount_in_eur = converter.convert("MDL", currency, amount)
         ConversionHistory.objects.create(
@@ -63,3 +61,31 @@ def conversion_history(request):
         conversion_elements = ConversionHistory.objects.all()
     response_data = ConversionHistorySerializer(conversion_elements, many=True).data
     return Response({'result': response_data, 'currency': currency})
+
+
+@api_view(['POST'])
+def load_conversion(request):
+    conversion_object = ConversionFileService.load_from_url(
+        'MDL',
+        'https://www.floatrates.com/daily/mdl.json'
+    )
+    for conversion in conversion_object:
+        # Caut daca deja exista
+        if CurrencyConversion.objects.filter(from_currency=conversion.from_currency,
+                                             to_currency=conversion.to_currency).exists():
+            # Get the object that exists from the database
+            existing_conversion = CurrencyConversion.objects.filter(
+                from_currency=conversion.from_currency,
+                to_currency=conversion.to_currency).first()
+            existing_conversion.rate = conversion.rate
+            existing_conversion.save()
+        else:
+            conversion.save(force_insert=True)
+    return Response(status=200)
+
+
+@api_view(['GET'])
+def get_all_conversions_available(request):
+    all_cc = CurrencyConversion.objects.all()
+    serialized = CurrencyConversionSerializer(all_cc, many=True).data
+    return Response(data=serialized, status=200)

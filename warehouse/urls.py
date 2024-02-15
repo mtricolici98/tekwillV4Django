@@ -21,10 +21,4 @@ from currency_converter.views import hello_world, convert, conversion_history, c
 
 urlpatterns = [
     path('home', hello_world),
-    path('hello', hello_world),
-    path('convert/<currency>/<amount>/', convert),
-    path('convert/', convert_post),
-    path('convert/load/', load_conversion),
-    path('convert/history/', conversion_history),
-    path('convert/list/', get_all_conversions_available),
 ]

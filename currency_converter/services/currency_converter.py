@@ -1,19 +1,9 @@
 import json
+from decimal import Decimal
+
 import requests
 
-
-class CurrencyConversion:
-    def __init__(self, from_currency, to_currency, rate, name):
-        self.from_currency = from_currency
-        self.to_currency = to_currency
-        self.rate = rate
-        self.name = name
-
-    def __lt__(self, other):
-        return self.rate < other.rate
-
-    def __eq__(self, other):
-        return self.rate == other.rate
+from currency_converter.models import CurrencyConversion
 
 
 class ConversionFileService:
@@ -51,37 +41,14 @@ class ConversionFileService:
 
 
 class CurrencyConversionService:
-    def __init__(self, conversion_data):
-        self.conversion_data = conversion_data
 
     def convert(self, from_currency, to_currency, amount):
-        conversion = self._find_conversion(from_currency, to_currency)
+        amount = Decimal(str(amount))
+        conversion = CurrencyConversion.objects.filter(
+            from_currency=from_currency
+        ).filter(to_currency=to_currency).first()
         if not conversion:
             raise ValueError("Conversion not available")
         return amount * conversion.rate
 
-    def get_rate_for(self, from_currency, to_currency):
-        conversion = self._find_conversion(from_currency, to_currency)
-        if not conversion:
-            raise ValueError("Conversion not available")
-        return conversion.rate
 
-    def _find_conversion(self, from_currency, to_currency):
-        for conversion in self.conversion_data:
-            if conversion.from_currency == from_currency and conversion.to_currency == to_currency:
-                return conversion
-        return None
-
-
-if __name__ == "__main__":
-    conversion_data = ConversionFileService.load_from_url('MDL', 'https://www.floatrates.com/daily/mdl.json')
-
-    converter = CurrencyConversionService(conversion_data)
-
-    amount_in_eur = converter.convert("MDL", "EUR", 2000)
-    print(f"Amount in EUR: {amount_in_eur:.2f}")
-    amount_in_mdl = converter.convert("EUR", "MDL", 2000)
-    print(f"Amount in MDL: {amount_in_mdl:.2f}")
-
-    rate_eur = converter.get_rate_for("MDL", "EUR")
-    print(f"Rate from MDL to EUR: {rate_eur}")
