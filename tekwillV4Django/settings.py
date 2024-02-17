@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'currency_converter',
-    'warehouse'
+    'warehouse',
+    'feed'
 ]
 
 MIDDLEWARE = [

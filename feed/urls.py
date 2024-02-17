@@ -14,14 +14,18 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 
-from currency_converter.views import hello_world, convert
+from feed.views import get_comments_for_post, add_comment, get_post_list, add_post, login, register, \
+    get_comments_for_user, like_post
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls')),
-    path('converter/', include('currency_converter.urls')),
-    path('feed/', include('feed.urls')),
+    path('user/login', login),
+    path('user/register', register),
+    path('post/list', get_post_list),
+    path('post/add', add_post),
+    path('post/like/<post_id>', like_post),
+    path('comments/add', add_comment),
+    path('comments/get/user', get_comments_for_user),
+    path('comments/get/<post_id>', get_comments_for_post),
 ]
